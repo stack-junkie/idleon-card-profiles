@@ -8,7 +8,7 @@
 - Uninstall restores recorded launch settings without replacing unrelated Steam data. Missing recovery data or edited Card Profiles commands block removal.
 - Added real player screenshots for preset naming, saving groups, and inspecting groups in the README.
 
-Automatic Steam setup and launch are pending live verification. Offline configuration and packaging checks do not establish the live route.
+Live verification: installation configured Steam, preserved existing profiles, and launched a visible Idleon window through Steam with Card Profiles connected. First-time installation on a clean Windows account and interactive uninstall still need verification.
 
 ## [0.1.1] - 2026-10-04
 

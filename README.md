@@ -13,7 +13,7 @@ For **Idleon on Steam, Windows x64**. Version **0.1.2**, unofficial test build.
 
 Setup connects the add-on to Steam automatically for your most recently used Steam account. Everything needed is included. No commands, launch-option copying, or separate software installs.
 
-The installer is unsigned, so Windows may show a warning. Only download it from this repository. The new automatic Steam setup needs live verification; a first-time install on a clean Windows account is also unverified.
+The installer is unsigned, so Windows may show a warning. Only download it from this repository. Automatic Steam setup and launch have been tested on an existing installation; a first-time install on a clean Windows account is still unverified.
 
 <details>
 <summary>Another Steam account or existing launch options?</summary>

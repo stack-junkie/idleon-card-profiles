@@ -20,7 +20,9 @@ The published 0.1.1 installer was downloaded from GitHub, its checksum verified,
 
 Version 0.1.2 replaces optional manual configuration with automatic Steam setup. The installer requires Steam and Idleon closed, scopes changes to the most recently used account's Idleon LaunchOptions, preserves ordinary existing arguments, and records the original setting in `steam-setup.json` under the add-on data directory. Full config backups remain beside Steam's localconfig.vdf. Restore edits only the managed setting; it preserves unrelated later Steam changes. Unknown VDF syntax, conflicting launchers, ambiguous accounts, and missing recovery information block the operation.
 
-A first-time install on a clean Windows account, the new automatic Steam setup and Steam **Play** route, live tray interactions, and interactive uninstall remain unverified. The earlier successful 0.1.1 update does not establish those 0.1.2 results.
+The 0.1.2 installer was then tested against the existing installation with Steam and Idleon closed. Its actual Repair / update and Play controls configured the most recently used Steam account and launched Idleon through Steam. Installed file hashes matched the package, profile data stayed unchanged during installation, and the visible game window initialized Card Profiles. The setting was re-read successfully after Steam restarted. This test used Steam's game-launch URI from the installer, which routes the launch through Steam; it did not automate a mouse click on the Steam library's Play button.
+
+A first-time install on a clean Windows account, live tray interactions, and interactive uninstall remain unverified.
 
 This is an unofficial client modification, with no affiliation with Lavaflame2 or account-safety guarantee. It is not a Steam Workshop package.
 
