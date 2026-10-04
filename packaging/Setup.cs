@@ -269,20 +269,47 @@ internal sealed class InstallForm : Form
 {
     public InstallForm()
     {
-        Text = "Install Idleon Card Profiles"; ClientSize = new Size(540, 272); StartPosition = FormStartPosition.CenterScreen;
+        Text = "Install Idleon Card Profiles"; ClientSize = new Size(540, 226); StartPosition = FormStartPosition.CenterScreen;
         Font = SystemFonts.MessageBoxFont; FormBorderStyle = FormBorderStyle.FixedDialog; MaximizeBox = false;
         Label title = new Label { Text = "Idleon Card Profiles", Location = new Point(22, 22), AutoSize = true, Font = new Font(SystemFonts.MessageBoxFont.FontFamily, 15, FontStyle.Bold) };
-        Label description = new Label { Text = "Adds named card presets and shared profiles to the Steam game.\n\nInstalls for your Windows account. No administrator access needed.\nYour saved profiles stay separate and are kept during repairs.", Location = new Point(22, 63), Size = new Size(492, 85) };
-        Label directory = new Label { Text = "Install location:\n" + Setup.InstallRoot, Location = new Point(22, 156), Size = new Size(492, 44) };
-        Button install = new Button { Text = Directory.Exists(Setup.InstallRoot) ? "Repair / update" : "Install", Location = new Point(319, 222), Size = new Size(112, 30) };
-        Button cancel = new Button { Text = "Cancel", DialogResult = DialogResult.Cancel, Location = new Point(440, 222), Size = new Size(78, 30) };
+        Label description = new Label { Text = "Name your card presets and save groups of card setups.\n\nExit Idleon before installing. Keep Steam open.", Location = new Point(22, 63), Size = new Size(492, 65) };
+        LinkLabel details = new LinkLabel { Text = "Installation details", AutoSize = true, Location = new Point(22, 143) };
+        details.LinkClicked += delegate { MessageBox.Show("Everything needed is included. No administrator access or separate software installation is needed.\n\nInstall location:\n" + Setup.InstallRoot + "\n\nYour saved profiles stay separate and are kept during updates. Steam settings and installed game files are unchanged.\n\nThis is an unofficial test build. Full live card loading and recovery checks are still pending.", "Installation details", MessageBoxButtons.OK, MessageBoxIcon.Information); };
+        Button install = new Button { Text = Directory.Exists(Setup.InstallRoot) ? "Repair / update" : "Install", Location = new Point(319, 176), Size = new Size(112, 30) };
+        Button cancel = new Button { Text = "Cancel", DialogResult = DialogResult.Cancel, Location = new Point(440, 176), Size = new Size(78, 30) };
         install.Click += delegate {
             install.Enabled = false; cancel.Enabled = false; UseWaitCursor = true;
-            try { Setup.Install(); Hide(); using (SteamSetup settings = new SteamSetup(Setup.InstallRoot)) { settings.ShowDialog(); } Close(); }
+            try { Setup.Install(); UseWaitCursor = false; Hide(); using (InstalledForm ready = new InstalledForm(Setup.InstallRoot)) { ready.ShowDialog(); } Close(); }
             catch (Exception error) { MessageBox.Show(error.Message, "Setup could not finish", MessageBoxButtons.OK, MessageBoxIcon.Warning); install.Enabled = true; cancel.Enabled = true; }
             finally { UseWaitCursor = false; }
         };
-        Controls.AddRange(new Control[] { title, description, directory, install, cancel }); AcceptButton = install; CancelButton = cancel;
+        Controls.AddRange(new Control[] { title, description, details, install, cancel }); AcceptButton = install; CancelButton = cancel;
+    }
+}
+
+internal sealed class InstalledForm : Form
+{
+    public InstalledForm(string root)
+    {
+        Text = "Idleon Card Profiles"; ClientSize = new Size(540, 226); StartPosition = FormStartPosition.CenterScreen;
+        Font = SystemFonts.MessageBoxFont; FormBorderStyle = FormBorderStyle.FixedDialog; MaximizeBox = false;
+        Label title = new Label { Text = "Ready to play", Location = new Point(22, 22), AutoSize = true, Font = new Font(SystemFonts.MessageBoxFont.FontFamily, 15, FontStyle.Bold) };
+        Label body = new Label { Text = "Keep Steam open, then click Play.\nNext time, use the Idleon Card Profiles desktop shortcut.\n\nIn the game, open Codex > Cards to name your presets.", Location = new Point(22, 63), Size = new Size(496, 76) };
+        LinkLabel steam = new LinkLabel { Text = "Optional: use Steam's Play button", AutoSize = true, Location = new Point(22, 147) };
+        steam.LinkClicked += delegate { using (SteamSetup settings = new SteamSetup(root)) { settings.ShowDialog(this); } };
+        Button play = new Button { Text = "Play", Location = new Point(319, 176), Size = new Size(112, 30) };
+        Button later = new Button { Text = "Later", DialogResult = DialogResult.Cancel, Location = new Point(440, 176), Size = new Size(78, 30) };
+        play.Click += delegate {
+            play.Enabled = false;
+            try {
+                using (Process launched = Process.Start(new ProcessStartInfo(Path.Combine(root, "IdleonCardProfiles.exe")) { WorkingDirectory = root, UseShellExecute = false, WindowStyle = ProcessWindowStyle.Hidden })) {
+                    if (launched == null) throw new IOException("Could not start Card Profiles. Try the desktop shortcut.");
+                }
+                Close();
+            }
+            catch (Exception error) { MessageBox.Show(this, error.Message, "Could not start Card Profiles", MessageBoxButtons.OK, MessageBoxIcon.Warning); play.Enabled = true; }
+        };
+        Controls.AddRange(new Control[] { title, body, steam, play, later }); CancelButton = later;
     }
 }
 

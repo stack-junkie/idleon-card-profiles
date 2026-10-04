@@ -2,7 +2,17 @@
 
 Name your native card presets and save complete groups of card setups to a shared local library. Load a saved group onto another compatible character, or restore that character's previous setup.
 
-Built for the **Windows x64 Steam client** of Legends of Idleon. This is an unofficial, unsigned **0.1.0 test build**. There is no published release yet.
+Built for the **Windows x64 Steam client** of Legends of Idleon. This is an unofficial, unsigned **0.1.1 test build**.
+
+## Get started
+
+1. [Download the Windows installer](https://github.com/stack-junkie/idleon-card-profiles/releases/download/v0.1.1/IdleonCardProfiles-Setup.exe).
+2. Exit Idleon, keep Steam open, and run the installer. Click **Install**.
+3. Click **Play**. Next time, use the **Idleon Card Profiles** desktop shortcut.
+
+No commands, separate software installs, or Steam settings needed for this route. In the game, open **Codex > Cards** and double-click a preset name to edit it.
+
+Windows may warn because the installer is unsigned. Check that your download comes from this repository. [Test status and limitations](#compatibility-and-test-status).
 
 ## What it does
 
@@ -16,15 +26,11 @@ The add-on does not change card quantities, star levels, progression, or the sel
 
 ## Install and play
 
-The normal player route is `IdleonCardProfiles-Setup.exe`. Until a release is published, this installer must be built from source using the instructions below. Players using a built installer do not need Node.js or terminal commands.
-
-1. Save and exit Idleon normally. Keep Steam running.
-2. Run `IdleonCardProfiles-Setup.exe` and click **Install**.
-3. Use the **Idleon Card Profiles** desktop shortcut to start the game with the add-on.
+The installer includes everything the add-on needs. Its final screen has **Play** and **Later** buttons; installing never starts the game automatically.
 
 Setup installs for the current Windows user under `%LOCALAPPDATA%\Programs\IdleonCardProfiles`. It includes Node.js 24.14.0 and keeps saved profiles in a separate data folder.
 
-To use Steam's normal **Play** button, copy the launch option shown by setup or the tray's **Settings** window into **Idleon > Properties > General > Launch Options**. This is a one-time manual setting. Keep `%command%` exactly as shown, and reconcile any existing custom options before replacing them. Setup does not edit Steam settings.
+To use Steam's normal **Play** button, choose **Optional: use Steam's Play button** after installation, or open the tray's **Settings** window. Copy the displayed launch option into **Idleon > Properties > General > Launch Options**. This is a one-time manual setting. Keep `%command%` exactly as shown, and reconcile any existing custom options before replacing them. Setup does not edit Steam settings.
 
 While playing, use **Disconnect add-on** in the tray menu to remove the add-on while leaving the game running. Closing the game also releases the helper. Before uninstalling through the Start menu or Windows Apps, clear the Card Profiles Steam launch option. Uninstall preserves saved profiles.
 
@@ -97,7 +103,7 @@ Building the installer requires Windows x64, **Node.js 24.14.0**, and the .NET F
 Outputs are written to `../output/`, beside the repository:
 
 - `IdleonCardProfiles-Setup.exe`
-- `idleon-card-profiles-0.1.0-win-x64.zip`
+- `idleon-card-profiles-0.1.1-win-x64.zip`
 
 The packaging checks extract the installer and exercise simulated installation and launcher behavior. They do not launch Steam or the game, or verify the interactive installation flow.
 

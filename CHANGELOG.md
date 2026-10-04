@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.1] - 2026-10-04
+
+- Simplified setup to Install, then Play or Later. Installation never starts the game automatically.
+- Made Steam launch-option setup optional instead of the first screen after installing.
+- Moved installation paths and technical details behind an Installation details link.
+- Added a direct installer download and three-step player instructions.
+
+This remains an unsigned test build. The new setup screens were checked offline; the live verification limits below still apply.
+
 ## [0.1.0]
 
 Initial test build. No public release has been published.

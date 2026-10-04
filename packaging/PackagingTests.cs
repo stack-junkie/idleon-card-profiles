@@ -97,6 +97,7 @@ internal static class PackagingTests
             RejectZip(root, "symlink", Zip("src/test.txt", false, false, false, true));
             Application.EnableVisualStyles(); Application.SetCompatibleTextRenderingDefault(false);
             Render(new InstallForm(), Path.Combine(root, "installer.png"));
+            Render(new InstalledForm(root), Path.Combine(root, "installed.png"));
             Render(new SteamSetup(@"C:\Users\Example\AppData\Local\Programs\IdleonCardProfiles"), Path.Combine(root, "steam-setup.png"));
             Render(new UninstallForm(), Path.Combine(root, "uninstall.png"));
             Console.WriteLine("PASS: " + checks + " packaging checks. Forms rendered offscreen. No install, shortcuts, game, or Steam actions performed."); return 0;
