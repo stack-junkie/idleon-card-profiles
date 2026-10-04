@@ -1,0 +1,27 @@
+name: Bug report
+description: Report an add-on, launcher, or installer problem.
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Add-on version
+      placeholder: 0.1.0
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What happened?
+      description: Include the steps, expected result, and actual result.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Setup
+      description: Windows version, Steam game build, and whether you used Steam Play or the desktop shortcut.
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Relevant error or screenshot
+      description: Redact account names and personal paths. Do not upload profile databases, account saves, or tokens.

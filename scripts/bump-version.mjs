@@ -1,0 +1,22 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+process.chdir(path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'));
+const version = process.argv[2];
+if (!version || !/^\d+\.\d+\.\d+(?:-[0-9A-Za-z]+(?:[.-][0-9A-Za-z]+)*)?$/u.test(version)) throw new Error('Supply a semantic version, for example 0.1.1-alpha.1.');
+const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+const previous = pkg.version;
+if (version === previous) throw new Error('Choose a new version.');
+const changelog = fs.readFileSync('CHANGELOG.md', 'utf8');
+const readme = fs.readFileSync('README.md', 'utf8');
+const firstEntry = changelog.indexOf('\n## ');
+if (firstEntry < 0) throw new Error('CHANGELOG has no release headings.');
+pkg.version = version;
+fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+fs.writeFileSync('src/version.js', `export const VERSION = '${version}';\n`);
+fs.writeFileSync('VERSION', version + '\n');
+fs.writeFileSync('README.md', readme.replaceAll(previous, version));
+const date = new Date().toISOString().slice(0, 10);
+fs.writeFileSync('CHANGELOG.md', changelog.slice(0, firstEntry) + `\n## [${version}] - ${date}\n\nDescribe the user-visible changes before committing.\n` + changelog.slice(firstEntry));
+console.log(`Version ${previous} -> ${version}. Complete the new changelog entry.`);

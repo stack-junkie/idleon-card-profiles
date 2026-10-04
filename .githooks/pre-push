@@ -1,0 +1,3 @@
+#!/bin/sh
+node scripts/check-release.mjs --head || exit 1
+node --test || exit 1

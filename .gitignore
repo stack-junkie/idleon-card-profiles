@@ -1,0 +1,17 @@
+.preview-data/
+output/
+*.tmp
+node_modules/
+coverage/
+.env
+.env.*
+!.env.example
+*.log
+*.exe
+*.zip
+packaging/build-*/
+packaging/test-output-*/
+APPROVED-PLAN.md
+STATUS.md
+.local/
+.playwright-cli/
