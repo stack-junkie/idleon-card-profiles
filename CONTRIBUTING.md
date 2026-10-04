@@ -22,7 +22,7 @@ Remove-Item Env:IDLEON_TEST_INSTALLED_FIXTURE
 
 For interface changes, use `node src/cli.js preview`. The optional browser check requires an existing Playwright installation: set `PLAYWRIGHT_MODULE` to its absolute module directory and, when needed, `PLAYWRIGHT_CHROMIUM_EXECUTABLE` to a headless Chromium executable, then run `node scripts/verify-preview.mjs`. It uses isolated preview data and does not connect to the game. Its native-font assertion requires the supported installed game fixture.
 
-For installer changes, use Windows x64, Node.js 24.14.0, and the .NET Framework 4 compiler described in the [README](README.md):
+For installer changes, use Windows x64, Node.js 24.14.0, and the .NET Framework 4 compiler described in the [technical notes](docs/technical-notes.md#develop-and-build):
 
 ```powershell
 .\scripts\build-installer.ps1

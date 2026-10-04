@@ -3,7 +3,7 @@ $addonRoot = Split-Path -Parent $PSScriptRoot
 $outputDirectory = Join-Path (Split-Path -Parent $addonRoot) 'output'
 $version = (Get-Content -LiteralPath (Join-Path $addonRoot 'package.json') -Raw | ConvertFrom-Json).version
 $archive = Join-Path $outputDirectory "idleon-card-profiles-$version-source.zip"
-$items = @('src', 'preview', 'test', 'scripts', '.github', '.githooks', '.gitignore', '.gitattributes', '.secret-allowlist', 'AGENTS.md', 'VERSION', 'package.json', 'README.md', 'CHANGELOG.md', 'CONTRIBUTING.md', 'SECURITY.md', 'LICENSE', 'ATTRIBUTION.md', 'Preview.ps1', 'Start-CardProfiles.ps1', 'Start-CardProfiles.cmd')
+$items = @('src', 'preview', 'test', 'scripts', 'docs', '.github', '.githooks', '.gitignore', '.gitattributes', '.secret-allowlist', 'AGENTS.md', 'VERSION', 'package.json', 'README.md', 'CHANGELOG.md', 'CONTRIBUTING.md', 'SECURITY.md', 'LICENSE', 'ATTRIBUTION.md', 'Preview.ps1', 'Start-CardProfiles.ps1', 'Start-CardProfiles.cmd')
 New-Item -ItemType Directory -Path $outputDirectory -Force | Out-Null
 $stage = Join-Path $outputDirectory ('.source-package-' + [Guid]::NewGuid().ToString('N'))
 try {
