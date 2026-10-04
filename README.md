@@ -13,7 +13,7 @@ For **Idleon on Steam, Windows x64**. Version **0.1.1**, unofficial test build.
 
 Everything needed is included. No commands or separate software installs.
 
-The installer is unsigned, so Windows may show a warning. Only download it from this repository. The new installer flow still needs an end-to-end test; in-game use has been reported working.
+The installer is unsigned, so Windows may show a warning. Only download it from this repository. Updating an existing installation through **Repair / update > Play** has been tested; a first-time install on a clean Windows account is still unverified.
 
 <details>
 <summary>Optional: launch through Steam's normal Play button</summary>

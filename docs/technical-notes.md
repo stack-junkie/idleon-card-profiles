@@ -12,7 +12,13 @@ The supported bundle SHA-256 is:
 
 This bundle was observed in Steam build `25394689`. Run the read-only `inspect` command below to check your installation.
 
-Automated storage, recovery, interface, launcher, and packaging checks have passed. The installed desktop launcher has initialized the add-on in the real game, and closing the game's native window has been verified to stop the game and its helpers. On October 4, 2026, the player reported successful in-game use, including loading a group on another character, Restore, and names/cards persisting after restart. These are player-reported results, not newly observed automated live tests. The published 0.1.1 installer still needs an end-to-end download, install, and Play test. Actual Steam **Play** after setting its launch option, live tray interactions, and interactive uninstall also remain unverified. An existing working installation does not establish a successful fresh installation.
+Automated storage, recovery, interface, launcher, and packaging checks have passed. The installed desktop launcher has initialized the add-on in the real game, and closing the game's native window has been verified to stop the game and its helpers.
+
+On October 4, 2026, the player reported successful in-game use, including loading a group on another character, Restore, and names/cards persisting after restart. These are player-reported results.
+
+The published 0.1.1 installer was downloaded from GitHub, its checksum verified, and its actual **Repair / update > Play** buttons exercised. Installed file hashes matched the package, existing profile data stayed unchanged during installation, and Play opened a visible game window with the add-on connected. Clicking the game's native close button stopped the game, launcher, and helper normally.
+
+A first-time install on a clean Windows account, actual Steam **Play** after setting its launch option, live tray interactions, and interactive uninstall remain unverified. A successful update of an existing installation does not establish a successful fresh installation.
 
 This is an unofficial client modification, with no affiliation with Lavaflame2 or account-safety guarantee. It is not a Steam Workshop package.
 
@@ -64,4 +70,3 @@ Outputs are written to `../output/`, beside the repository:
 The packaging checks extract the installer and exercise simulated installation and launcher behavior. They do not launch Steam or the game, or verify the interactive installation flow.
 
 See [Contributing](../CONTRIBUTING.md) for additional checks, [Changelog](../CHANGELOG.md) for changes, [Security](../SECURITY.md) for reporting guidance, and [Attribution](../ATTRIBUTION.md) for third-party notices.
-
