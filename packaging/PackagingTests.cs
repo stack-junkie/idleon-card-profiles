@@ -65,8 +65,8 @@ internal static class PackagingTests
         {
             if (args.Length != 2) throw new ArgumentException("Test root and extracted bundled node path are required.");
             string root = Path.GetFullPath(args[0]); Directory.CreateDirectory(root);
-            string[] baseArgs = Launcher.BuildArguments(root, new string[0]);
-            Assert(baseArgs.Length == 3 && baseArgs[1] == "launch" && baseArgs[2] == "--live", "Default launch contract");
+            Assert(Launcher.SteamGameUri == "steam://rungameid/1476970", "Default launch opens Idleon through Steam");
+            Throws(delegate { Launcher.BuildArguments(root, new string[0]); }, "Default launch cannot bypass Steam through helper arguments");
             string[] gameArgs = new string[] { "--steam", @"C:\Steam Library\steamapps\common\Legends of Idleon\LegendsOfIdleon.exe", "", "two words", "quote\"inside", "trail\\", "double\\\\\"quote", "& | < > ^ % ! $()", "Unicode é雪", "line\nbreak" };
             string[] forwarded = Launcher.BuildArguments(root, gameArgs);
             Assert(forwarded[1] == "steam" && forwarded[2] == "--" && forwarded.Length == gameArgs.Length + 2, "Steam command contract");
@@ -82,6 +82,25 @@ internal static class PackagingTests
                 Assert(received.Length == forwarded.Length, "Preserve argument count");
                 for (int i = 0; i < received.Length; i++) Assert(received[i] == forwarded[i], "Preserve Windows argument " + i);
             }
+            string stagedRuntime = Path.Combine(root, "staged runtime");
+            Directory.CreateDirectory(Path.Combine(stagedRuntime, "runtime")); Directory.CreateDirectory(Path.Combine(stagedRuntime, "src"));
+            File.Copy(args[1], Path.Combine(stagedRuntime, "runtime", "node.exe"));
+            string setupScript = Path.Combine(stagedRuntime, "src", "steam-setup.js");
+            File.WriteAllText(setupScript, "console.log(JSON.stringify(process.argv.slice(2)))", new UTF8Encoding(false));
+            string eventualRoot = Path.Combine(root, "Final install 雪");
+            foreach (string action in new string[] { "check", "enable", "disable", "status" })
+            {
+                string[] setupArgs = new JavaScriptSerializer().Deserialize<string[]>(Launcher.RunSteamSetup(stagedRuntime, action, eventualRoot));
+                Assert(setupArgs.Length == 2 && setupArgs[0] == action && setupArgs[1] == eventualRoot, "Steam setup forwards action and final destination: " + action);
+            }
+            Throws(delegate { Launcher.RunSteamSetup(stagedRuntime, "unsupported", eventualRoot); }, "Reject unsupported Steam setup action");
+            File.WriteAllText(setupScript, "console.error('Exit Steam before setup.'); process.exitCode = 1", new UTF8Encoding(false));
+            bool reported = false;
+            try { Launcher.RunSteamSetup(stagedRuntime, "enable", eventualRoot); }
+            catch (IOException error) { reported = error.Message == "Exit Steam before setup."; }
+            Assert(reported, "Surface Steam setup failure without claiming success");
+            File.WriteAllText(setupScript, "process.stdout.write('x'.repeat(131072)); process.stderr.write('y'.repeat(131072)); process.exitCode = 1", new UTF8Encoding(false));
+            Throws(delegate { Launcher.RunSteamSetup(stagedRuntime, "check", eventualRoot); }, "Drain both output streams without deadlock on setup failure");
             string valid = Path.Combine(root, "valid");
             using (MemoryStream input = new MemoryStream(Zip("src/test.txt", false, false, false, false))) { Setup.Extract(input, valid); }
             Assert(File.ReadAllText(Path.Combine(valid, "src", "test.txt")) == "workspace fixture", "Valid payload extracted");

@@ -9,6 +9,7 @@ using System.Windows.Forms;
 
 public static class Launcher
 {
+    public const string SteamGameUri = "steam://rungameid/1476970";
     // CommandLineToArgvW / Microsoft CRT quoting. Never involve cmd.exe.
     public static string Quote(string value)
     {
@@ -29,8 +30,7 @@ public static class Launcher
     {
         List<string> result = new List<string>();
         result.Add(Path.Combine(root, "src", "cli.js"));
-        if (args.Length == 0) { result.Add("launch"); result.Add("--live"); }
-        else if (args[0] == "--steam")
+        if (args.Length > 0 && args[0] == "--steam")
         {
             if (args.Length < 2 || !(args[1].StartsWith("\\\\") || (args[1].Length > 2 && args[1][1] == ':' && (args[1][2] == '\\' || args[1][2] == '/'))) ||
                 !String.Equals(Path.GetFileName(args[1]), "LegendsOfIdleon.exe", StringComparison.OrdinalIgnoreCase))
@@ -49,6 +49,42 @@ public static class Launcher
         return String.Join(" ", quoted);
     }
 
+    // Setup uses its staged runtime for preflight, with the eventual install path.
+    // Read both streams asynchronously so even a verbose failure cannot deadlock.
+    public static string RunSteamSetup(string runtimeRoot, string action, string installRoot)
+    {
+        if (action != "check" && action != "enable" && action != "disable" && action != "status") throw new ArgumentException("Unknown Steam setup action.");
+        string node = Path.Combine(runtimeRoot, "runtime", "node.exe");
+        string script = Path.Combine(runtimeRoot, "src", "steam-setup.js");
+        if (!File.Exists(node) || !File.Exists(script)) throw new IOException("Card Profiles is incomplete. Run the latest installer to repair it.");
+        using (Process child = new Process())
+        {
+            child.StartInfo = new ProcessStartInfo(node, JoinArguments(new string[] { script, action, Path.GetFullPath(installRoot) })) {
+                WorkingDirectory = runtimeRoot, UseShellExecute = false, CreateNoWindow = true,
+                RedirectStandardOutput = true, RedirectStandardError = true,
+                StandardOutputEncoding = Encoding.UTF8, StandardErrorEncoding = Encoding.UTF8
+            };
+            StringBuilder output = new StringBuilder(), errors = new StringBuilder();
+            object gate = new object();
+            child.OutputDataReceived += delegate(object sender, DataReceivedEventArgs e) { if (e.Data != null) lock (gate) { output.AppendLine(e.Data); if (output.Length > 3000) output.Remove(0, output.Length - 3000); } };
+            child.ErrorDataReceived += delegate(object sender, DataReceivedEventArgs e) { if (e.Data != null) lock (gate) { errors.AppendLine(e.Data); if (errors.Length > 3000) errors.Remove(0, errors.Length - 3000); } };
+            child.Start(); child.BeginOutputReadLine(); child.BeginErrorReadLine();
+            // The script bounds external discovery itself. Never terminate it during a config write.
+            child.WaitForExit();
+            lock (gate)
+            {
+                if (child.ExitCode != 0) throw new IOException(errors.Length == 0 ? "Steam setup could not finish. Exit Idleon and Steam, then try again." : errors.ToString().Trim());
+                return output.ToString().Trim();
+            }
+        }
+    }
+
+    public static void OpenSteamGame(string root)
+    {
+        RunSteamSetup(root, "status", root);
+        using (Process opened = Process.Start(new ProcessStartInfo(SteamGameUri) { UseShellExecute = true })) { }
+    }
+
     [STAThread]
     public static int Main(string[] args)
     {
@@ -59,6 +95,7 @@ public static class Launcher
         string logPath = null;
         try
         {
+            if (args.Length == 0) { OpenSteamGame(root); return 0; }
             string[] forwarded = BuildArguments(root, args);
             string node = Path.Combine(root, "runtime", "node.exe");
             if (!File.Exists(node) || !File.Exists(forwarded[0])) throw new IOException("Card Profiles is incomplete. Run setup again to repair it.");
@@ -105,8 +142,8 @@ public static class Launcher
                 catch (IOException) { }
                 catch (UnauthorizedAccessException) { }
             }
-            MessageBox.Show(error.Message + "\n\nTo play normally, clear Idleon's Steam Launch Options.\n" +
-                (logPath == null ? "Run setup again if a repair is needed." : "Details: " + logPath), "Card Profiles could not start", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            MessageBox.Show(error.Message + "\n\nFor setup repair, exit Idleon and Steam, then run the installer again.\n" +
+                (logPath == null ? "Uninstalling Card Profiles restores your previous Steam settings." : "Details: " + logPath), "Card Profiles could not start", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return 1;
         }
     }
@@ -164,17 +201,20 @@ internal sealed class SteamSetup : Form
     {
         Text = "Card Profiles: Steam setup";
         StartPosition = FormStartPosition.CenterScreen;
-        ClientSize = new Size(550, 310); MinimumSize = new Size(566, 349);
+        ClientSize = new Size(550, 236); MinimumSize = new Size(566, 275);
         Font = SystemFonts.MessageBoxFont; FormBorderStyle = FormBorderStyle.FixedDialog; MaximizeBox = false;
-        Label title = new Label { Text = "Use Steam Play with Card Profiles", Location = new Point(22, 20), AutoSize = true, Font = new Font(SystemFonts.MessageBoxFont.FontFamily, 13, FontStyle.Bold) };
-        Label steps = new Label { Text = "1. Copy the launch option below.\n2. In Steam, right-click Idleon > Properties > General.\n3. Paste it into Launch Options, then use Play.", Location = new Point(22, 61), Size = new Size(505, 62) };
-        TextBox command = new TextBox { Text = Launcher.Quote(Path.Combine(root, "IdleonCardProfiles.exe")) + " --steam %command%", ReadOnly = true, Location = new Point(22, 132), Size = new Size(505, 24) };
-        Button copy = new Button { Text = "Copy launch option", Location = new Point(22, 168), Size = new Size(150, 30) };
-        copy.Click += delegate { try { Clipboard.SetText(command.Text); copy.Text = "Copied"; } catch (Exception) { command.Focus(); command.SelectAll(); } };
-        Label note = new Label { Text = "One-time setup. Clear Launch Options before uninstalling.\nLive Steam Play integration still needs validation.", Location = new Point(22, 216), Size = new Size(505, 40) };
-        LinkLabel details = new LinkLabel { Text = "Details", AutoSize = true, Location = new Point(22, 271) };
-        details.LinkClicked += delegate { MessageBox.Show("This local helper starts the installed Steam game and adds card profile controls. It does not replace the game.\n\nSteam must supply %command% exactly as shown. Existing custom Launch Options need to be reconciled before pasting.\n\nIf a game update is unsupported, clear Launch Options to play normally. Your saved profiles remain in %LOCALAPPDATA%\\IdleonCardProfiles.\n\nSetup never edits Steam settings or closes your game.", "Steam setup details", MessageBoxButtons.OK, MessageBoxIcon.Information); };
-        Button close = new Button { Text = "Close", DialogResult = DialogResult.OK, Location = new Point(437, 267), Size = new Size(90, 28) };
-        Controls.AddRange(new Control[] { title, steps, command, copy, note, details, close }); CancelButton = close;
+        Label title = new Label { Text = "Card Profiles in Steam", Location = new Point(22, 20), AutoSize = true, Font = new Font(SystemFonts.MessageBoxFont.FontFamily, 13, FontStyle.Bold) };
+        Label steps = new Label { Text = "Exit Idleon and Steam, then click Enable / repair.\nAfter setup, open Idleon in Steam and click Play.", Location = new Point(22, 61), Size = new Size(505, 48) };
+        Button enable = new Button { Text = "Enable / repair", Location = new Point(22, 121), Size = new Size(150, 30) };
+        Button close = new Button { Text = "Close", DialogResult = DialogResult.OK, Location = new Point(437, 186), Size = new Size(90, 28) };
+        enable.Click += delegate {
+            enable.Enabled = false; close.Enabled = false; UseWaitCursor = true;
+            try { Launcher.RunSteamSetup(root, "enable", root); steps.Text = "Ready. Open Idleon in Steam and click Play."; enable.Text = "Enabled"; }
+            catch (Exception error) { MessageBox.Show(this, error.Message, "Steam setup could not finish", MessageBoxButtons.OK, MessageBoxIcon.Warning); enable.Enabled = true; }
+            finally { close.Enabled = true; UseWaitCursor = false; }
+        };
+        LinkLabel details = new LinkLabel { Text = "Details", AutoSize = true, Location = new Point(22, 192) };
+        details.LinkClicked += delegate { MessageBox.Show("Installation normally sets this up automatically. Use repair after switching Steam accounts or changing launch settings.\n\nSetup backs up Idleon's previous launch options. Uninstall restores them. Your game files and saved profiles stay unchanged.\n\nSteam must be fully exited while its settings are updated. Setup never closes Steam or your game for you.", "Steam setup details", MessageBoxButtons.OK, MessageBoxIcon.Information); };
+        Controls.AddRange(new Control[] { title, steps, enable, details, close }); AcceptButton = enable; CancelButton = close;
     }
 }

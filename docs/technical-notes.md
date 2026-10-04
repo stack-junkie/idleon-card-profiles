@@ -18,7 +18,9 @@ On October 4, 2026, the player reported successful in-game use, including loadin
 
 The published 0.1.1 installer was downloaded from GitHub, its checksum verified, and its actual **Repair / update > Play** buttons exercised. Installed file hashes matched the package, existing profile data stayed unchanged during installation, and Play opened a visible game window with the add-on connected. Clicking the game's native close button stopped the game, launcher, and helper normally.
 
-A first-time install on a clean Windows account, actual Steam **Play** after setting its launch option, live tray interactions, and interactive uninstall remain unverified. A successful update of an existing installation does not establish a successful fresh installation.
+Version 0.1.2 replaces optional manual configuration with automatic Steam setup. The installer requires Steam and Idleon closed, scopes changes to the most recently used account's Idleon LaunchOptions, preserves ordinary existing arguments, and records the original setting in `steam-setup.json` under the add-on data directory. Full config backups remain beside Steam's localconfig.vdf. Restore edits only the managed setting; it preserves unrelated later Steam changes. Unknown VDF syntax, conflicting launchers, ambiguous accounts, and missing recovery information block the operation.
+
+A first-time install on a clean Windows account, the new automatic Steam setup and Steam **Play** route, live tray interactions, and interactive uninstall remain unverified. The earlier successful 0.1.1 update does not establish those 0.1.2 results.
 
 This is an unofficial client modification, with no affiliation with Lavaflame2 or account-safety guarantee. It is not a Steam Workshop package.
 
@@ -65,7 +67,7 @@ Building the installer requires Windows x64, **Node.js 24.14.0**, and the .NET F
 Outputs are written to `../output/`, beside the repository:
 
 - `IdleonCardProfiles-Setup.exe`
-- `idleon-card-profiles-0.1.1-win-x64.zip`
+- `idleon-card-profiles-0.1.2-win-x64.zip`
 
 The packaging checks extract the installer and exercise simulated installation and launcher behavior. They do not launch Steam or the game, or verify the interactive installation flow.
 

@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.1.2] - 2026-10-04
+
+- Steam's normal Play button is now the default route. Installation configures it automatically for the most recently used Steam account.
+- Installer Play and desktop shortcuts launch through Steam too. The helper runs only when Steam invokes the configured wrapper.
+- Setup preserves existing game arguments, backs up Steam settings, refuses conflicting custom launchers, and requires Steam and Idleon to be closed.
+- Uninstall restores recorded launch settings without replacing unrelated Steam data. Missing recovery data or edited Card Profiles commands block removal.
+- Added real player screenshots for preset naming, saving groups, and inspecting groups in the README.
+
+Automatic Steam setup and launch are pending live verification. Offline configuration and packaging checks do not establish the live route.
+
 ## [0.1.1] - 2026-10-04
 
 - Simplified setup to Install, then Play or Later. Installation never starts the game automatically.

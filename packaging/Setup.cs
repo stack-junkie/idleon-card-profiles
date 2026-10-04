@@ -167,6 +167,7 @@ public static class Setup
                 string name;
                 try { name = process.ProcessName; } catch (InvalidOperationException) { continue; }
                 if (String.Equals(name, "LegendsOfIdleon", StringComparison.OrdinalIgnoreCase)) throw new IOException("Exit Idleon normally before installing, repairing, or uninstalling.");
+                if (String.Equals(name, "steam", StringComparison.OrdinalIgnoreCase)) throw new IOException("Exit Steam using Steam > Exit, then try again. Closing only its window keeps Steam running.");
                 if (!String.Equals(name, "node", StringComparison.OrdinalIgnoreCase) && !String.Equals(name, "IdleonCardProfiles", StringComparison.OrdinalIgnoreCase)) continue;
                 try
                 {
@@ -186,6 +187,7 @@ public static class Setup
         string parent = Path.GetDirectoryName(InstallRoot); Directory.CreateDirectory(parent);
         string staged = Path.Combine(parent, ".IdleonCardProfiles-stage-" + Guid.NewGuid().ToString("N"));
         using (Stream payload = Assembly.GetExecutingAssembly().GetManifestResourceStream("payload.zip")) { Extract(payload, staged); }
+        Launcher.RunSteamSetup(staged, "check", InstallRoot);
         // Check again after extraction, before touching an existing installation.
         RequireIdle();
         string previous = null;
@@ -193,6 +195,7 @@ public static class Setup
         try { Directory.Move(staged, InstallRoot); }
         catch { if (previous != null && !Directory.Exists(InstallRoot)) Directory.Move(previous, InstallRoot); throw; }
         Links(false); Registration(false);
+        Launcher.RunSteamSetup(InstallRoot, "enable", InstallRoot);
     }
 
     private static void Registration(bool remove)
@@ -257,6 +260,7 @@ public static class Setup
     public static string Uninstall()
     {
         RequireOwnedRoot(); RequireIdle();
+        Launcher.RunSteamSetup(InstallRoot, "disable", InstallRoot);
         string retained = InstallRoot + ".uninstalled-" + DateTime.Now.ToString("yyyyMMdd-HHmmss") + "-" + Guid.NewGuid().ToString("N").Substring(0, 6);
         Directory.Move(InstallRoot, retained);
         try { Links(true); Registration(true); }
@@ -272,9 +276,9 @@ internal sealed class InstallForm : Form
         Text = "Install Idleon Card Profiles"; ClientSize = new Size(540, 226); StartPosition = FormStartPosition.CenterScreen;
         Font = SystemFonts.MessageBoxFont; FormBorderStyle = FormBorderStyle.FixedDialog; MaximizeBox = false;
         Label title = new Label { Text = "Idleon Card Profiles", Location = new Point(22, 22), AutoSize = true, Font = new Font(SystemFonts.MessageBoxFont.FontFamily, 15, FontStyle.Bold) };
-        Label description = new Label { Text = "Name your card presets and save groups of card setups.\n\nExit Idleon before installing. Keep Steam open.", Location = new Point(22, 63), Size = new Size(492, 65) };
+        Label description = new Label { Text = "Name your card presets and save groups of card setups.\n\nExit Idleon and Steam before installing. Setup adds Card Profiles to Steam's normal Play button.", Location = new Point(22, 63), Size = new Size(492, 75) };
         LinkLabel details = new LinkLabel { Text = "Installation details", AutoSize = true, Location = new Point(22, 143) };
-        details.LinkClicked += delegate { MessageBox.Show("Everything needed is included. No administrator access or separate software installation is needed.\n\nInstall location:\n" + Setup.InstallRoot + "\n\nYour saved profiles stay separate and are kept during updates. Steam settings and installed game files are unchanged.\n\nThis is an unofficial test build. Full live card loading and recovery checks are still pending.", "Installation details", MessageBoxButtons.OK, MessageBoxIcon.Information); };
+        details.LinkClicked += delegate { MessageBox.Show("Everything needed is included. No administrator access or separate software installation is needed.\n\nInstall location:\n" + Setup.InstallRoot + "\n\nSetup enables Card Profiles for the most recently used Steam account and backs up Idleon's previous launch options. Uninstall restores those settings.\n\nYour saved profiles are kept during updates. Installed game files stay unchanged.\n\nTo fully exit Steam, choose Steam > Exit. Setup never closes Steam or your game for you.", "Installation details", MessageBoxButtons.OK, MessageBoxIcon.Information); };
         Button install = new Button { Text = Directory.Exists(Setup.InstallRoot) ? "Repair / update" : "Install", Location = new Point(319, 176), Size = new Size(112, 30) };
         Button cancel = new Button { Text = "Cancel", DialogResult = DialogResult.Cancel, Location = new Point(440, 176), Size = new Size(78, 30) };
         install.Click += delegate {
@@ -294,22 +298,18 @@ internal sealed class InstalledForm : Form
         Text = "Idleon Card Profiles"; ClientSize = new Size(540, 226); StartPosition = FormStartPosition.CenterScreen;
         Font = SystemFonts.MessageBoxFont; FormBorderStyle = FormBorderStyle.FixedDialog; MaximizeBox = false;
         Label title = new Label { Text = "Ready to play", Location = new Point(22, 22), AutoSize = true, Font = new Font(SystemFonts.MessageBoxFont.FontFamily, 15, FontStyle.Bold) };
-        Label body = new Label { Text = "Keep Steam open, then click Play.\nNext time, use the Idleon Card Profiles desktop shortcut.\n\nIn the game, open Codex > Cards to name your presets.", Location = new Point(22, 63), Size = new Size(496, 76) };
-        LinkLabel steam = new LinkLabel { Text = "Optional: use Steam's Play button", AutoSize = true, Location = new Point(22, 147) };
-        steam.LinkClicked += delegate { using (SteamSetup settings = new SteamSetup(root)) { settings.ShowDialog(this); } };
+        Label body = new Label { Text = "Open Idleon in Steam and click Play.\nThe desktop shortcut also opens it through Steam.\n\nIn the game, open Codex > Cards to name your presets.", Location = new Point(22, 63), Size = new Size(496, 76) };
         Button play = new Button { Text = "Play", Location = new Point(319, 176), Size = new Size(112, 30) };
         Button later = new Button { Text = "Later", DialogResult = DialogResult.Cancel, Location = new Point(440, 176), Size = new Size(78, 30) };
         play.Click += delegate {
             play.Enabled = false;
             try {
-                using (Process launched = Process.Start(new ProcessStartInfo(Path.Combine(root, "IdleonCardProfiles.exe")) { WorkingDirectory = root, UseShellExecute = false, WindowStyle = ProcessWindowStyle.Hidden })) {
-                    if (launched == null) throw new IOException("Could not start Card Profiles. Try the desktop shortcut.");
-                }
+                Launcher.OpenSteamGame(root);
                 Close();
             }
             catch (Exception error) { MessageBox.Show(this, error.Message, "Could not start Card Profiles", MessageBoxButtons.OK, MessageBoxIcon.Warning); play.Enabled = true; }
         };
-        Controls.AddRange(new Control[] { title, body, steam, play, later }); CancelButton = later;
+        Controls.AddRange(new Control[] { title, body, play, later }); AcceptButton = play; CancelButton = later;
     }
 }
 
@@ -317,18 +317,16 @@ internal sealed class UninstallForm : Form
 {
     public UninstallForm()
     {
-        Text = "Uninstall Card Profiles"; ClientSize = new Size(540, 274); StartPosition = FormStartPosition.CenterScreen;
+        Text = "Uninstall Card Profiles"; ClientSize = new Size(540, 244); StartPosition = FormStartPosition.CenterScreen;
         Font = SystemFonts.MessageBoxFont; FormBorderStyle = FormBorderStyle.FixedDialog; MaximizeBox = false;
-        Label instructions = new Label { Text = "Clear the Steam launch option first", Location = new Point(22, 22), AutoSize = true, Font = new Font(SystemFonts.MessageBoxFont.FontFamily, 13, FontStyle.Bold) };
-        Label body = new Label { Text = "In Steam, right-click Idleon > Properties > General.\nRemove the Card Profiles command from Launch Options.\n\nYour saved profiles will stay in:\n" + Setup.DataRoot + "\n\nThe installed files will be kept in a recovery folder.", Location = new Point(22, 61), Size = new Size(496, 126) };
-        CheckBox cleared = new CheckBox { Text = "I cleared the Card Profiles launch option, or never set it.", Location = new Point(22, 191), Size = new Size(496, 24) };
-        Button uninstall = new Button { Text = "Uninstall", Enabled = false, Location = new Point(335, 231), Size = new Size(90, 28) };
-        Button cancel = new Button { Text = "Cancel", DialogResult = DialogResult.Cancel, Location = new Point(435, 231), Size = new Size(83, 28) };
-        cleared.CheckedChanged += delegate { uninstall.Enabled = cleared.Checked; };
+        Label instructions = new Label { Text = "Exit Idleon and Steam first", Location = new Point(22, 22), AutoSize = true, Font = new Font(SystemFonts.MessageBoxFont.FontFamily, 13, FontStyle.Bold) };
+        Label body = new Label { Text = "Uninstall restores your previous Steam launch settings.\nTo fully exit Steam, choose Steam > Exit.\n\nYour saved profiles will stay in:\n" + Setup.DataRoot + "\n\nThe installed files will be kept in a recovery folder.", Location = new Point(22, 61), Size = new Size(496, 126) };
+        Button uninstall = new Button { Text = "Uninstall", Location = new Point(335, 201), Size = new Size(90, 28) };
+        Button cancel = new Button { Text = "Cancel", DialogResult = DialogResult.Cancel, Location = new Point(435, 201), Size = new Size(83, 28) };
         uninstall.Click += delegate {
             try { string retained = Setup.Uninstall(); MessageBox.Show("Card Profiles was uninstalled. Your profiles are unchanged.\n\nRecovery copy:\n" + retained + "\n\nRun setup to reinstall.", "Card Profiles", MessageBoxButtons.OK, MessageBoxIcon.Information); Close(); }
             catch (Exception error) { MessageBox.Show(error.Message, "Uninstall could not finish", MessageBoxButtons.OK, MessageBoxIcon.Warning); }
         };
-        Controls.AddRange(new Control[] { instructions, body, cleared, uninstall, cancel }); CancelButton = cancel;
+        Controls.AddRange(new Control[] { instructions, body, uninstall, cancel }); AcceptButton = uninstall; CancelButton = cancel;
     }
 }
